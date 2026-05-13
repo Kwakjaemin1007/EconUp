@@ -23,7 +23,8 @@ class EconUpApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
+        val database = AppDatabase.getInstance(this)
+        val wordRepository = WordRepository(database.wordDao(), database.progressDao())
         // 3. 앱이 켜질 때 Firestore 동기화 실행 (CCTV 로그가 찍힐 겁니다!)
         CoroutineScope(Dispatchers.IO).launch {
             wordRepository.syncFromFirestoreIfNeeded()

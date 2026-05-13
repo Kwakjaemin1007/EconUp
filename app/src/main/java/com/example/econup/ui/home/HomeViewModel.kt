@@ -1,11 +1,18 @@
 package com.example.econup.ui.home
 
 import androidx.lifecycle.ViewModel
+import com.example.econup.data.db.ProgressDao
+import com.example.econup.data.repository.WordRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val wordRepository: WordRepository,
+    private val progressDao: ProgressDao
+) : ViewModel() {
+
+    // 기존에 작성하신 초기 데이터 유지!
     private val _todayCount = MutableStateFlow(15)
     val todayCount: StateFlow<Int> = _todayCount.asStateFlow()
 

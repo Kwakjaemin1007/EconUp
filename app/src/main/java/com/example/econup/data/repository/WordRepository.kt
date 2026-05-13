@@ -8,6 +8,7 @@ import com.example.econup.data.entity.EconomyWord
 import com.example.econup.data.entity.UserProgress
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.Flow
 import com.google.firebase.firestore.Source
 // 1. Repository 클래스를 선언하고, 생성자로 실제 Dao 객체들을 받습니다.
 class WordRepository(
@@ -73,5 +74,13 @@ class WordRepository(
             isBookmarked = !currentProgress.isBookmarked
         )
         progressDao.upsertProgress(updatedProgress) // 여기도 소문자!
+    }
+    fun getWordsByCategory(category: String): Flow<List<EconomyWord>> {
+        return wordDao.getWordsByCategory(category)
+    }
+
+    // 전체 단어 가져오기 (LearnViewModel에서 사용됨)
+    fun getAllWords(): Flow<List<EconomyWord>> {
+        return wordDao.getAllWords()
     }
 }

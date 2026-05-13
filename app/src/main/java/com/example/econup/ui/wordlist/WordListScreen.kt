@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -13,15 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.econup.data.entity.EconomyWord
-import com.example.econup.ui.components.BottomNavItem
+import androidx.navigation.NavController
 
 @Composable
 fun WordListScreen(
-    viewModel: WordListViewModel = viewModel()
+    navController: NavController,
+    viewModel: WordListViewModel // = viewModel() 제거됨
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
@@ -30,7 +29,6 @@ fun WordListScreen(
     val filters = listOf("전체", "학습완료", "북마크", "거시경제")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // 상단 검색 텍스트 필드
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { viewModel.updateSearchQuery(it) },
@@ -41,7 +39,6 @@ fun WordListScreen(
             singleLine = true
         )
 
-        // 필터 칩 (LazyRow)
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,22 +56,30 @@ fun WordListScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 단어 카드 리스트
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(words) { word ->
-                WordCard(word = word)
+            // key를 지정해주면 스크롤이나 북마크 변경 시 깜빡임이 덜합니다.
+            items(words, key = { it.word.id }) { uiModel ->
+                WordCard(
+                    uiModel = uiModel,
+                    onBookmarkClick = { viewModel.toggleBookmark(uiModel.word.id) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun WordCard(word: EconomyWord) {
+fun WordCard(
+    uiModel: WordUiModel,
+    onBookmarkClick: () -> Unit
+) {
+    val word = uiModel.word
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -87,13 +92,25 @@ fun WordCard(word: EconomyWord) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = word.fullName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Icon(imageVector = Icons.Default.FavoriteBorder, contentDescription = "북마크")
+
+                // 북마크 여부에 따라 아이콘 및 색상 변경
+                IconButton(onClick = onBookmarkClick) {
+                    Icon(
+                        imageVector = if (uiModel.isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "북마크",
+                        tint = if (uiModel.isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            Badge(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                Text(text = word.category, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+            // 카테고리와 학습완료 상태를 칩으로 예쁘게 표시
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SuggestionChip(onClick = {}, label = { Text(word.category) })
+                if (uiModel.isLearned) {
+                    SuggestionChip(onClick = {}, label = { Text("✅ 학습완료") })
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -101,4 +118,3 @@ fun WordCard(word: EconomyWord) {
         }
     }
 }
-

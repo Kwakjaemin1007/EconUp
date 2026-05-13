@@ -1,46 +1,75 @@
 package com.example.econup.ui.wordlist
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.econup.EconUpApplication
+import com.example.econup.data.db.ProgressDao
 import com.example.econup.data.entity.EconomyWord
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import com.example.econup.data.repository.WordRepository
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-// 일반 ViewModel 대신 Application을 받을 수 있는 AndroidViewModel을 사용합니다.
-class WordListViewModel(application: Application) : AndroidViewModel(application) {
+// 단어 정보와 사용자의 학습/북마크 상태를 하나로 묶어 UI로 보낼 데이터 클래스
+data class WordUiModel(
+    val word: EconomyWord,
+    val isBookmarked: Boolean,
+    val isLearned: Boolean
+)
 
-    // EconUpApplication에 만들어둔 진짜 DB(wordDao)를 가져옴
-    private val wordDao = (application as EconUpApplication).database.wordDao()
+class WordListViewModel(
+    private val wordRepository: WordRepository,
+    private val progressDao: ProgressDao
+) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
     val selectedFilter = MutableStateFlow("전체")
-    // 대신 DB에서 검색어("")를 넣어 모든 단어를 실시간(Flow)으로 가져옴
-    private val allWordsFromDB = wordDao.searchWords("")
 
-    // DB에서 가져온 진짜 단어들을 검색어와 필터에 맞게 가공해서 화면(Screen)으로 보냄
-    val filteredWords: StateFlow<List<EconomyWord>> = combine(
-        searchQuery, selectedFilter, allWordsFromDB
-    ) { query, filter, words ->
-        words.filter { word ->
-            (query.isEmpty() || word.term.contains(query, ignoreCase = true)) &&
-                    (filter == "전체" || word.category == filter)
+    // DB에서 전체 단어와 전체 진행도를 가져옴
+    private val allWords = wordRepository.getAllWords()
+    private val allProgress = progressDao.getAllProgress()
+
+    // 1. 단어 + 진행도 결합
+    private val wordUiModels: Flow<List<WordUiModel>> = combine(allWords, allProgress) { words, progresses ->
+        words.map { word ->
+            val progress = progresses.find { it.wordId == word.id }
+            WordUiModel(
+                word = word,
+                isBookmarked = progress?.isBookmarked == true,
+                isLearned = progress?.isLearned == true
+            )
+        }
+    }
+
+    // 2. 검색어 및 필터 적용
+    val filteredWords: StateFlow<List<WordUiModel>> = combine(
+        searchQuery, selectedFilter, wordUiModels
+    ) { query, filter, models ->
+        models.filter { model ->
+            // 검색어 포함 여부
+            val matchesQuery = query.isEmpty() || model.word.term.contains(query, ignoreCase = true)
+
+            // 필터 칩 조건
+            val matchesFilter = when (filter) {
+                "전체" -> true
+                "학습완료" -> model.isLearned
+                "북마크" -> model.isBookmarked
+                else -> model.word.category == filter // 예: "거시경제"
+            }
+
+            matchesQuery && matchesFilter
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList() // 처음에 DB를 읽어올 동안 잠깐 보여줄 빈 리스트
+        initialValue = emptyList()
     )
 
-    fun updateSearchQuery(query: String) {
-        searchQuery.value = query
-    }
+    fun updateSearchQuery(query: String) { searchQuery.value = query }
+    fun updateFilter(filter: String) { selectedFilter.value = filter }
 
-    fun updateFilter(filter: String) {
-        selectedFilter.value = filter
+    // 북마크 클릭 시 Repository를 통해 DB 업데이트
+    fun toggleBookmark(wordId: String) {
+        viewModelScope.launch {
+            wordRepository.toggleBookmark(wordId)
+        }
     }
 }

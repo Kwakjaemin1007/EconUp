@@ -16,4 +16,7 @@ interface ProgressDao {
 
     @Upsert
     suspend fun upsertProgress(progress: UserProgress)
+
+    @Query("SELECT * FROM user_progress")
+    fun getAllProgress(): Flow<List<UserProgress>>
 }

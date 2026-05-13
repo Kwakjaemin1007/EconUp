@@ -20,4 +20,8 @@ interface WordDao {
 
     @Query("SELECT COUNT(*) FROM economy_words")
     suspend fun getWordCount(): Int
+
+    // 👇 이 부분이 추가되어야 합니다!
+    @Query("SELECT * FROM economy_words")
+    fun getAllWords(): Flow<List<EconomyWord>>
 }
