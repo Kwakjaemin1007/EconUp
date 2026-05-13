@@ -71,10 +71,16 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
+    // 1. DataStore (마지막 동기화 시간 등 간단한 설정 저장용)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // 2. Coroutines Play Services (Firestore에서 데이터를 기다리는 .await() 함수 사용을 위해 필수)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
 
     // Firebase BOM & Firestore
-    //implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
-    //implementation("com.google.firebase:firebase-firestore")
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation("com.google.firebase:firebase-firestore")
 
     // Retrofit2 + OkHttp3 + Gson
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
