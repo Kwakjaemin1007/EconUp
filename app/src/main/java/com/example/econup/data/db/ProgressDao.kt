@@ -1,3 +1,5 @@
+package com.example.econup.data.db
+
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert

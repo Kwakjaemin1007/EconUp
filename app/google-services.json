@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "471485841657",
+    "project_id": "econup-6d1cc",
+    "storage_bucket": "econup-6d1cc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471485841657:android:1af992404b3e553966e228",
+        "android_client_info": {
+          "package_name": "com.example.econup"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQggrMte4JKr-FPUlKZuICrP3VlOF2i78"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,7 +1,9 @@
 package com.example.econup.ui.wordlist
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.econup.EconUpApplication
 import com.example.econup.data.entity.EconomyWord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -9,30 +11,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
-class WordListViewModel : ViewModel() {
+// 일반 ViewModel 대신 Application을 받을 수 있는 AndroidViewModel을 사용합니다.
+class WordListViewModel(application: Application) : AndroidViewModel(application) {
+
+    // EconUpApplication에 만들어둔 진짜 DB(wordDao)를 가져옴
+    private val wordDao = (application as EconUpApplication).database.wordDao()
+
     val searchQuery = MutableStateFlow("")
     val selectedFilter = MutableStateFlow("전체")
+    // 대신 DB에서 검색어("")를 넣어 모든 단어를 실시간(Flow)으로 가져옴
+    private val allWordsFromDB = wordDao.searchWords("")
 
-    // 더미 데이터 (Repository 연결 전 UI 테스트용)
-    private val allWords = MutableStateFlow(
-        listOf(
-            EconomyWord("1", "GDP", "Gross Domestic Product", "국내총생산. 한 나라 안에서 생산된 모든 재화와 서비스의 시장가치.", "한국의 GDP가 상승했다.", "거시경제", 2),
-            EconomyWord("2", "인플레이션", "Inflation", "물가가 지속적으로 오르는 현상.", "인플레이션으로 인해 밥값이 올랐다.", "거시경제", 1)
-        )
-    )
-
-    // combine을 이용한 필터링 로직
+    // DB에서 가져온 진짜 단어들을 검색어와 필터에 맞게 가공해서 화면(Screen)으로 보냄
     val filteredWords: StateFlow<List<EconomyWord>> = combine(
-        searchQuery, selectedFilter, allWords
+        searchQuery, selectedFilter, allWordsFromDB
     ) { query, filter, words ->
         words.filter { word ->
             (query.isEmpty() || word.term.contains(query, ignoreCase = true)) &&
-                    (filter == "전체" || word.category == filter) // 나중에 북마크/학습완료 조건 추가
+                    (filter == "전체" || word.category == filter)
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
+        initialValue = emptyList() // 처음에 DB를 읽어올 동안 잠깐 보여줄 빈 리스트
     )
 
     fun updateSearchQuery(query: String) {
