@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.econup.data.db.AppDatabase
 import com.example.econup.data.db.ProgressDao
+import com.example.econup.data.repository.NewsRepository
 import com.example.econup.data.repository.WordRepository
 import com.example.econup.ui.category.CategoryScreen
 import com.example.econup.ui.category.CategoryViewModel
@@ -27,6 +28,10 @@ import com.example.econup.ui.home.HomeScreen
 import com.example.econup.ui.home.HomeViewModel
 import com.example.econup.ui.learn.LearnScreen
 import com.example.econup.ui.learn.LearnViewModel
+import com.example.econup.ui.news.NewsScreen
+import com.example.econup.ui.news.NewsViewModel
+import com.example.econup.ui.profile.ProfileScreen
+import com.example.econup.ui.profile.ProfileViewModel
 import com.example.econup.ui.wordlist.WordListScreen
 import com.example.econup.ui.wordlist.WordListViewModel
 import kotlin.jvm.java
@@ -80,8 +85,13 @@ fun EconUpApp(viewModelFactory: ViewModelProvider.Factory) {
                 val viewModel: WordListViewModel = viewModel(factory = viewModelFactory)
                 WordListScreen(navController = navController, viewModel = viewModel)
             }
-            composable("news") { /* NewsScreen */ }
-            composable("profile") { /* ProfileScreen */ }
+            composable("news") {
+                val viewModel: NewsViewModel = viewModel(factory = viewModelFactory)
+                NewsScreen(viewModel = viewModel)
+            }
+            composable("profile") {
+                val viewModel: ProfileViewModel = viewModel(factory = viewModelFactory)
+                ProfileScreen(viewModel = viewModel) }
 
             // 1. 카테고리 화면
             composable("category") {
@@ -116,14 +126,25 @@ class AppViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return LearnViewModel(wordRepository) as T
         }
-        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(wordRepository, progressDao) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
         if (modelClass.isAssignableFrom(WordListViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return WordListViewModel(wordRepository, progressDao) as T
         }
-    }
+        if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return HomeViewModel(wordRepository, progressDao) as T
+        }
+        if (modelClass.isAssignableFrom(NewsViewModel::class.java)) {
+            val newsRepository = NewsRepository(null)
+            @Suppress("UNCHECKED_CAST")
+            return NewsViewModel(newsRepository, wordRepository) as T
+        }
+        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ProfileViewModel(wordRepository, progressDao) as T
+        } // 👉 Profile 괄호가 여기서 닫혀야 합니다!
+
+        // 👉 에러 던지는 코드는 모든 if문이 끝난 뒤 제일 마지막에 있어야 합니다!
+        throw IllegalArgumentException("Unknown ViewModel class")
+    } // create 함수 닫기
 }
